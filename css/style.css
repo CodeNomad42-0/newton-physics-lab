@@ -3,13 +3,9 @@
    设计分辨率 1280×720，居中按比例自适应缩放（等价原版 canvas_items 拉伸）
    ============================================================ */
 
-@font-face {
-  font-family: 'Noto Sans SC';
-  src: url('../assets/fonts/NotoSansSC-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* 中文字体使用系统自带：苹方（Apple）/ 微软雅黑（Windows）/ Noto Sans CJK（Android）。
+   原先内置的 16 MB Noto Sans SC（.otf）已移除：它是全站唯一重量级资源（占总体积 99%），
+   慢链路下要传十几分钟，会让首屏长时间卡在加载中；系统字体观感几乎一致。 */
 
 :root {
   /* 配色：与 js/constants.js 保持一致 */
@@ -60,8 +56,9 @@ html, body {
   touch-action: manipulation;
   background: #d8d5cc;
   color: var(--text);
-  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC',
-               'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+               'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC',
+               'Helvetica Neue', Arial, sans-serif;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
 }

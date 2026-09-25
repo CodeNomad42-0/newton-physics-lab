@@ -184,8 +184,10 @@ const Game = {
   setResult(t) { this.fResult.textContent = t; },
   setNote(t) { this.note.textContent = t; },
 
+  // Canvas 内文字：与 CSS 保持同一套系统字体链（不再加载网络字体）
   fontFamily() {
-    return "'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+    return "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', "
+      + "'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif";
   },
 
   renderCharts() {
