@@ -6,7 +6,8 @@ const SIM_TYPES = [
   { key: 'projectile', name: '平抛运动', ready: false, note: '暂定' },
 ];
 
-// ---------------- 数据输入（3 组共 5 个输入框）----------------
+// ---------------- 数据输入（4 组共 8 个输入框）----------------
+// primary: 参与「知三求二」的已知量；其余为过程记录项，不参与公式求解
 const SIM_GROUPS = [
   { title: '速度数据（变化）', fields: [
     { key: 'v0', label: '变化初始值 v₀', unit: 'm/s', primary: true },
@@ -258,13 +259,22 @@ class PhysicsSimulator {
     const c = this.canvas;
     const toLocal = (e) => {
       const r = c.getBoundingClientRect();
-      const lx = (e.clientX - r.left) / Math.max(r.width, 1);   // 屏幕上的归一化位置
-      const ly = (e.clientY - r.top) / Math.max(r.height, 1);
-      // 整页顺时针旋转 90° 时：屏幕「下」= 画布 +x，屏幕「右」= 画布 -y
-      if (this.game.rotated) {
-        return { x: ly * c.clientWidth, y: (1 - lx) * c.clientHeight };
+      const cw = c.clientWidth;
+      const ch = c.clientHeight;
+      // 移动端竖屏时整页被旋转 90°，需把屏幕坐标逆旋转回画布局部坐标
+      if (this.game.stage.classList.contains('rotated')) {
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const s = Math.max(r.width / Math.max(ch, 1), 1e-6); // 旋转后视觉宽 = 内容高 × 缩放
+        return {
+          x: cw / 2 + (e.clientY - cy) / s,
+          y: ch / 2 - (e.clientX - cx) / s,
+        };
       }
-      return { x: lx * c.clientWidth, y: ly * c.clientHeight };
+      return {
+        x: (e.clientX - r.left) * (cw / Math.max(r.width, 1)),
+        y: (e.clientY - r.top) * (ch / Math.max(r.height, 1)),
+      };
     };
 
     c.addEventListener('pointerdown', (e) => {
@@ -402,7 +412,7 @@ class PhysicsSimulator {
         this.fieldsHost.appendChild(row);
       }
     }
-    const note = makeEl('div', 'panel-hint', '加速度取单一恒定值 a，作用于整段运动过程。');
+    const note = makeEl('div', 'panel-hint', 'v₀ / v / a / t / x 任填 3 个，留空 2 个自动求解；加速度取单一恒定值 a。');
     this.fieldsHost.appendChild(note);
   }
 

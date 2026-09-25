@@ -9,6 +9,6 @@ archive/godot/.godot/
 .DS_Store
 
 # 外部参考工程（Nuxt 源码，不纳入本仓库）
-physics-lab-main/
+参考资源/
 archive/
 .trae/

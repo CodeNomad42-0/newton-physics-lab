@@ -545,7 +545,7 @@ body {
   overflow: hidden;
 }
 
-.sim-canvas-card canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.sim-canvas-card canvas { display: block; width: 100%; height: 100%; }
 
 .sim-canvas-card canvas:focus { outline: none; }
 
