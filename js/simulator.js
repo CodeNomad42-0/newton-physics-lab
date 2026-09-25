@@ -277,33 +277,57 @@ class PhysicsSimulator {
       };
     };
 
-    c.addEventListener('pointerdown', (e) => {
-      const p = toLocal(e);
+    // 命中进度条/播放键后的三件事，Pointer 与 Touch 两条路径共用
+    const press = (p) => {
       const hit = this.hitProgress(p.x, p.y);
-      if (!hit) return;
-      e.preventDefault();
+      if (!hit) return false;
       if (hit === 'btn') {
         this.togglePlay();
-        return;
+        return true;
       }
       this.dragging = true;
-      if (c.setPointerCapture) c.setPointerCapture(e.pointerId);
       this.seekFromX(p.x);
-    });
-
-    c.addEventListener('pointermove', (e) => {
-      const p = toLocal(e);
+      return true;
+    };
+    const move = (p) => {
       if (this.dragging) {
         this.seekFromX(p.x);
         return;
       }
       const hit = this.hitProgress(p.x, p.y);
       c.style.cursor = hit === 'btn' ? 'pointer' : (hit ? 'ew-resize' : 'default');
-    });
+    };
+    const release = () => { this.dragging = false; };
 
-    const stopDrag = () => { this.dragging = false; };
-    c.addEventListener('pointerup', stopDrag);
-    c.addEventListener('pointercancel', stopDrag);
+    if (Env.hasPointer) {
+      // 完整版：Pointer Events（iOS 13+ / 现代浏览器），可做指针捕获，拖出画布也不丢
+      c.addEventListener('pointerdown', (e) => {
+        if (!press(toLocal(e))) return;
+        e.preventDefault();
+        if (c.setPointerCapture) c.setPointerCapture(e.pointerId);
+      });
+      c.addEventListener('pointermove', (e) => move(toLocal(e)));
+      c.addEventListener('pointerup', release);
+      c.addEventListener('pointercancel', release);
+    } else {
+      // 降级版：旧 Safari（iOS 12 及以下）没有 Pointer Events，退回 touch 事件
+      const firstTouch = (e) =>
+        (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || null;
+      c.addEventListener('touchstart', (e) => {
+        const t = firstTouch(e);
+        if (!t || !press(toLocal(t))) return;
+        e.preventDefault(); // 阻止随后的滚动/缩放接管这次拖动
+      }, { passive: false });
+      c.addEventListener('touchmove', (e) => {
+        if (!this.dragging) return;
+        const t = firstTouch(e);
+        if (!t) return;
+        e.preventDefault();
+        move(toLocal(t));
+      }, { passive: false });
+      c.addEventListener('touchend', release);
+      c.addEventListener('touchcancel', release);
+    }
 
     c.addEventListener('keydown', (e) => {
       if (!this.solved || this.tEnd <= 0) return;

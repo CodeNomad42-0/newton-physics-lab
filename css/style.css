@@ -37,6 +37,13 @@
   --title-h: 52px;
   --data-h: 216px;
   --panel-w: 372px;
+
+  /* iOS 安全区（刘海 / 灵动岛 / Home 指示条），由 JS 读取后从可用宽高中扣除。
+     旧 Safari 不支持 env() 时这些变量为空，JS 侧统一回落为 0，布局不受影响。 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 * { box-sizing: border-box; }
@@ -46,6 +53,11 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  /* iOS Safari 在旋转 / 横屏时会自行放大文字，关掉以保持设计比例 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* 页面本身不需要滚动：禁掉双击缩放（Safari 会忽略 user-scalable=no） */
+  touch-action: manipulation;
   background: #d8d5cc;
   color: var(--text);
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC',
@@ -73,6 +85,11 @@ body {
 
 .view {
   position: absolute;
+  /* 旧 Safari（iOS ≤ 14.4）不支持 inset 简写，用四值兜底 */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
 }
 
@@ -82,6 +99,11 @@ body {
 
 .menu-root {
   position: absolute;
+  /* 旧 Safari（iOS ≤ 14.4）不支持 inset 简写，用四值兜底 */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   display: flex;
   flex-direction: column;
@@ -425,6 +447,11 @@ body {
 
 .overlay {
   position: absolute;
+  /* 旧 Safari（iOS ≤ 14.4）不支持 inset 简写，用四值兜底 */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 10;
   display: flex;
@@ -545,7 +572,16 @@ body {
   overflow: hidden;
 }
 
-.sim-canvas-card canvas { display: block; width: 100%; height: 100%; }
+/* 画布内要按住拖动进度条：触摸交给 JS 处理，避免 Safari 把手势识别成缩放/滚动 */
+.sim-canvas-card canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 
 .sim-canvas-card canvas:focus { outline: none; }
 
@@ -605,5 +641,46 @@ body {
   color: var(--highlight);
   border-color: var(--highlight);
   background: #fff8ef;
+}
+
+/* ============================================================
+   优雅降级：旧 Safari / 能力受限环境下的替代路径
+   （新浏览器仍走上面的完整实现，以下规则对它们完全不生效）
+   ============================================================ */
+
+/* 极旧环境（无 Canvas 2D）时的整页提示，避免白屏 */
+.fallback-note {
+  padding: 32px 24px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text);
+  text-align: center;
+}
+
+/* iOS Safari 会忽略 user-scalable=no，聚焦字号小于 16px 的输入框时自动放大页面且不会缩回。
+   这里只在「触屏 + iOS（可探测 -webkit-touch-callout）」时把输入框字号提到 16px，从根上避免自动缩放。 */
+@media (pointer: coarse) {
+  @supports (-webkit-touch-callout: none) {
+    .field-input { font-size: 16px; }
+  }
+}
+
+/* 旧 Safari（iOS ≤ 14.0）不支持 flex 的 gap，间距会全部丢失；
+   改用相邻兄弟外边距做等效间距。仅在不支持 inset 的浏览器里生效，避免与现代实现叠加。 */
+@supports not (inset: 0) {
+  .menu-cards > * + * { margin-top: 18px; }
+  .menu-card > * + * { margin-left: 20px; }
+  .title-bar > * + * { margin-left: 12px; }
+  .field-row > * + * { margin-left: 8px; }
+  .check-row > * + * { margin-left: 8px; }
+  .data-area > * + * { margin-left: 8px; }
+  .formula > * + * { margin-top: 6px; }
+  .sim-head > * + * { margin-left: 12px; }
+  .sim-main > * + * { margin-left: 12px; }
+  .sim-actions > * + * { margin-top: 6px; }
+  .sim-types > * + * { margin-left: 8px; }
+  .sim-right > * + * { margin-top: 10px; }
+  .dock-head > * + * { margin-left: 10px; }
+  .chart-dock.open .dock-body > * + * { margin-left: 8px; }
 }
 

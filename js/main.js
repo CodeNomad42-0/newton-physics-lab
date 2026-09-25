@@ -46,6 +46,19 @@ const Game = {
   _last: 0,
 
   init() {
+    // 核心能力兜底：完全没有 Canvas 2D 时给一句可读提示，而不是整页白屏
+    if (!hasCanvas2D()) {
+      document.body.innerHTML = '<div class="fallback-note">当前浏览器不支持 Canvas 2D 绘图，'
+        + '请升级到 iOS 13 / Safari 13 或更高版本后重试。</div>';
+      return;
+    }
+    // iOS Safari 会忽略 user-scalable=no：拦掉 Safari 专有的双指缩放 / 旋转手势，
+    // 避免缩放后布局不再重算导致画面错位（其他浏览器没有这些事件，注册后不会触发）
+    const stopGesture = (e) => { e.preventDefault(); };
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((name) => {
+      document.addEventListener(name, stopGesture, { passive: false });
+    });
+
     this.stage = document.getElementById('stage');
     this.viewMenu = document.getElementById('view-menu');
     this.viewLevel = document.getElementById('view-level');
@@ -98,9 +111,11 @@ const Game = {
     const vh = window.innerHeight;
     if (vw <= 0 || vh <= 0) return; // 视口尚未就绪：保持当前缩放，避免整页被缩到 0
     const rotate = this.needRotate(vw, vh);
-    // 旋转 90° 后可用宽高互换：横向可用宽度 = 视口高，可用高度 = 视口宽
-    const availW = rotate ? vh : vw;
-    const availH = rotate ? vw : vh;
+    const ins = safeInsets(); // iOS 安全区；不支持的浏览器全为 0
+    // 旋转 90° 后可用宽高互换：横向可用宽度 = 视口高，可用高度 = 视口宽；
+    // 再把安全区（刘海 / 灵动岛 / Home 指示条）从对应方向扣除，避免按钮被遮挡
+    const availW = rotate ? vh - ins.top - ins.bottom : vw - ins.left - ins.right;
+    const availH = rotate ? vw - ins.left - ins.right : vh - ins.top - ins.bottom;
     const s = Math.min(availW / Constants.VIEW_W, availH / Constants.VIEW_H);
     this.stage.style.transform = rotate ? `rotate(90deg) scale(${s})` : `scale(${s})`;
     this.stage.classList.toggle('rotated', rotate);
@@ -110,7 +125,8 @@ const Game = {
   needRotate(vw, vh) {
     if (vh <= vw) return false;
     if (/Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent || '')) return true;
-    // 触屏设备兜底判断（含浏览器移动端模拟）
+    // 触屏设备兜底：旧 Safari 不支持 pointer: coarse 媒体查询时也能命中
+    if (Env.hasTouch && Math.min(screen.width, screen.height) <= 1024) return true;
     return window.matchMedia('(pointer: coarse)').matches
       && Math.min(screen.width, screen.height) <= 900;
   },

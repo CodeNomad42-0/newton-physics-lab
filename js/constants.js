@@ -33,6 +33,49 @@ const Constants = {
   BTN_MIN_H: 44.0,           // 触屏最小点击目标高度
 };
 
+// ---- 运行环境能力检测：优雅降级用（完整能力 → 旧 Safari 的替代路径） ----
+const Env = {
+  hasPointer: typeof window.PointerEvent === 'function',   // Pointer Events：iOS 13+ / 现代浏览器
+  hasTouch: 'ontouchstart' in window || (navigator.maxTouchPoints | 0) > 0,
+  // 触屏设备把 dpr 上限压到 2：iOS 3x 背板会让 canvas 内存翻数倍，2x 视觉几乎无损
+  maxDpr: ('ontouchstart' in window || (navigator.maxTouchPoints | 0) > 0) ? 2 : 4,
+};
+
+// 无 requestAnimationFrame 的旧浏览器：用定时器模拟，避免主循环完全不启动
+if (typeof window.requestAnimationFrame !== 'function') {
+  window.requestAnimationFrame = function (cb) {
+    return window.setTimeout(function () {
+      cb(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+    }, 16);
+  };
+  window.cancelAnimationFrame = function (id) { window.clearTimeout(id); };
+}
+
+// 读取 iOS 安全区（刘海 / 灵动岛 / Home 指示条）
+// 旧 Safari 不支持 env() 时 CSS 变量为空，这里统一回落为 0，布局照常
+function safeInsets() {
+  const cs = window.getComputedStyle(document.documentElement);
+  const px = function (name) {
+    const v = parseFloat(cs.getPropertyValue(name));
+    return isFinite(v) ? v : 0;
+  };
+  return {
+    top: px('--safe-top'),
+    right: px('--safe-right'),
+    bottom: px('--safe-bottom'),
+    left: px('--safe-left'),
+  };
+}
+
+// 核心能力兜底：完全没有 Canvas 2D 时给一句提示，而不是整页白屏
+function hasCanvas2D() {
+  try {
+    return !!document.createElement('canvas').getContext('2d');
+  } catch (e) {
+    return false;
+  }
+}
+
 // 将 #rrggbb 转为 rgba() 字符串
 function rgba(hex, a) {
   const h = hex.replace('#', '');
@@ -44,7 +87,7 @@ function rgba(hex, a) {
 
 // 准备 Canvas（适配 devicePixelRatio，返回 {ctx, w, h}，坐标以 CSS 像素计）
 function prepareCanvas(canvas) {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, Env.maxDpr);
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   if (w <= 0 || h <= 0) {
