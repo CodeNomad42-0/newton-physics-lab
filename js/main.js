@@ -42,6 +42,7 @@ const Game = {
   fLine: null,
   fSub: null,
   fResult: null,
+  rotated: false,   // 竖屏手机整页旋转 90° 时为 true（供画布坐标换算使用）
   _acc: 0,
   _last: 0,
 
@@ -90,12 +91,18 @@ const Game = {
   },
 
   // ---- 舞台等比缩放：等价原版 1280×720 canvas_items 拉伸自适应 ----
+  // 竖屏触屏设备（手机）整体顺时针旋转 90° 并按 16:9 适配，用户横持手机即得正向画面
   fitStage() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     if (vw <= 0 || vh <= 0) return; // 视口尚未就绪：保持当前缩放，避免整页被缩到 0
-    const s = Math.min(vw / Constants.VIEW_W, vh / Constants.VIEW_H);
-    this.stage.style.transform = `scale(${s})`;
+    const touch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    this.rotated = touch && vh > vw;
+    // 旋转后设计宽 1280 对应视口长边、设计高 720 对应视口短边
+    const s = this.rotated
+      ? Math.min(vh / Constants.VIEW_W, vw / Constants.VIEW_H)
+      : Math.min(vw / Constants.VIEW_W, vh / Constants.VIEW_H);
+    this.stage.style.transform = this.rotated ? `rotate(90deg) scale(${s})` : `scale(${s})`;
   },
 
   // ---- 主菜单 ----

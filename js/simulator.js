@@ -6,8 +6,7 @@ const SIM_TYPES = [
   { key: 'projectile', name: '平抛运动', ready: false, note: '暂定' },
 ];
 
-// ---------------- 数据输入（4 组共 8 个输入框）----------------
-// primary: 参与「知三求二」的已知量；其余为过程记录项，不参与公式求解
+// ---------------- 数据输入（3 组共 5 个输入框）----------------
 const SIM_GROUPS = [
   { title: '速度数据（变化）', fields: [
     { key: 'v0', label: '变化初始值 v₀', unit: 'm/s', primary: true },
@@ -16,9 +15,6 @@ const SIM_GROUPS = [
   { title: '加速度相关参数', fields: [
     { key: 'a', label: '加速度大小 a', unit: 'm/s²', primary: true },
     { key: 't', label: '加速度作用时间 t', unit: 's', primary: true },
-  ] },
-  { title: '加速度变化参数', fields: [
-    { key: 'a0', label: '变化初始值 a₀', unit: 'm/s²' },
   ] },
   { title: '位移数据（变化）', fields: [
     { key: 'x', label: '变化最终值 x', unit: 'm', primary: true },
@@ -262,10 +258,13 @@ class PhysicsSimulator {
     const c = this.canvas;
     const toLocal = (e) => {
       const r = c.getBoundingClientRect();
-      return {
-        x: (e.clientX - r.left) * (c.clientWidth / Math.max(r.width, 1)),
-        y: (e.clientY - r.top) * (c.clientHeight / Math.max(r.height, 1)),
-      };
+      const lx = (e.clientX - r.left) / Math.max(r.width, 1);   // 屏幕上的归一化位置
+      const ly = (e.clientY - r.top) / Math.max(r.height, 1);
+      // 整页顺时针旋转 90° 时：屏幕「下」= 画布 +x，屏幕「右」= 画布 -y
+      if (this.game.rotated) {
+        return { x: ly * c.clientWidth, y: (1 - lx) * c.clientHeight };
+      }
+      return { x: lx * c.clientWidth, y: ly * c.clientHeight };
     };
 
     c.addEventListener('pointerdown', (e) => {
@@ -403,7 +402,7 @@ class PhysicsSimulator {
         this.fieldsHost.appendChild(row);
       }
     }
-    const note = makeEl('div', 'panel-hint', 'a₀ 仅作记录，不参与公式求解。加速度取单一恒定值 a。');
+    const note = makeEl('div', 'panel-hint', '加速度取单一恒定值 a，作用于整段运动过程。');
     this.fieldsHost.appendChild(note);
   }
 
