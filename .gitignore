@@ -1,0 +1,14 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Godot archive
+archive/godot/.godot/
+
+# macOS
+.DS_Store
+
+# 外部参考工程（Nuxt 源码，不纳入本仓库）
+physics-lab-main/
+archive/
+.trae/

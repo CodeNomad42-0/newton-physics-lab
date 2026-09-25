@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛顿三定律·交互式物理实验室</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ================= 主菜单 ================= -->
+  <section id="view-menu" class="view">
+    <div class="menu-root">
+      <div class="menu-head">
+        <h1 class="menu-title">交互式物理实验室 · 调节、观察、验证</h1>
+        <button class="btn btn-primary" id="btn-sim" type="button">物理仿真</button>
+      </div>
+      <p class="menu-tag">对标《物理（必修1）》1.1.3 / 1.2.1 / 1.2.2 / 1.2.3</p>
+
+      <div class="menu-cards" id="menu-cards"></div>
+
+      <p class="menu-hint">每关提供参数输入框与操作按钮 · 支持触屏操作</p>
+    </div>
+  </section>
+
+  <!-- ================= 关卡 ================= -->
+  <section id="view-level" class="view hidden">
+
+    <!-- 顶部标题栏 -->
+    <header class="title-bar">
+      <span class="title-text" id="level-title">牛顿三定律 · 交互式物理实验室</span>
+      <span class="title-tag" id="level-tag"></span>
+      <span class="title-spacer"></span>
+      <button class="btn" id="btn-mute" type="button">静音</button>
+      <button class="btn" id="btn-back" type="button">← 返回主菜单</button>
+    </header>
+
+    <!-- 主体：画布 + 控制面板 -->
+    <div class="body">
+      <div class="canvas-panel">
+        <canvas id="physics-canvas"></canvas>
+        <div class="canvas-note" id="canvas-note"></div>
+      </div>
+
+      <aside class="control-panel">
+        <div class="panel-head">控制面板</div>
+        <div id="control-body"></div>
+      </aside>
+    </div>
+
+    <!-- 数据区：公式看板 + V-t / X-t 图 -->
+    <footer class="data-area">
+      <div class="card formula-card">
+        <div class="formula">
+          <div class="formula-title" id="formula-title"></div>
+          <div class="formula-row" id="formula-line"></div>
+          <div class="formula-row dim" id="formula-sub"></div>
+          <div class="formula-row hl" id="formula-result"></div>
+        </div>
+      </div>
+      <div class="card chart-card">
+        <canvas id="chart-vt"></canvas>
+      </div>
+      <div class="card chart-card">
+        <canvas id="chart-xt"></canvas>
+      </div>
+    </footer>
+
+  </section>
+
+  <!-- ================= 物理仿真弹窗 ================= -->
+  <div id="sim-overlay" class="overlay hidden">
+    <div class="sim-modal">
+      <header class="sim-head">
+        <span class="sim-title">物理仿真</span>
+        <span class="sim-tag" id="sim-type-tag"></span>
+        <span class="title-spacer"></span>
+        <button class="btn" id="sim-close" type="button">关闭</button>
+      </header>
+
+      <div class="sim-main">
+        <!-- 左：题目类型 + 数据输入 -->
+        <aside class="sim-panel">
+          <div class="panel-section">题目类型</div>
+          <div class="sim-types" id="sim-types"></div>
+
+          <div class="sim-fields" id="sim-fields"></div>
+
+          <div class="sim-actions">
+            <button class="btn btn-primary btn-block" id="sim-solve" type="button">求解并仿真</button>
+            <button class="btn btn-block" id="sim-clear" type="button">清空</button>
+            <div class="panel-hint" id="sim-hint"></div>
+          </div>
+        </aside>
+
+        <!-- 右：公式推导 + 运动仿真 + 可折叠图表 -->
+        <div class="sim-right">
+          <div class="card formula-card sim-derive">
+            <div class="formula">
+              <div class="formula-title" id="sim-formula-title">公式推导</div>
+              <div class="formula-row" id="sim-formula-line">请选择题目类型并输入数据</div>
+              <div class="formula-row dim pre" id="sim-formula-sub"></div>
+              <div class="formula-row hl" id="sim-formula-result"></div>
+            </div>
+          </div>
+
+          <div class="sim-canvas-card">
+            <canvas id="sim-canvas" tabindex="0"></canvas>
+          </div>
+
+          <div class="chart-dock" id="sim-chart-dock">
+            <button class="dock-head" id="sim-chart-toggle" type="button">
+              <span class="dock-title">V-t 图 / X-t 图（点击展开）</span>
+              <span class="dock-arrow" id="sim-chart-arrow">展开 ▾</span>
+            </button>
+            <div class="dock-body">
+              <div class="card chart-card">
+                <canvas id="sim-chart-vt"></canvas>
+              </div>
+              <div class="card chart-card">
+                <canvas id="sim-chart-xt"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/constants.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/view.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/simulator.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+/* ============================================================
+   牛顿三定律·交互式物理实验室 — 浅色实验室风样式
+   设计分辨率 1280×720，居中按比例自适应缩放（等价原版 canvas_items 拉伸）
+   ============================================================ */
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('../assets/fonts/NotoSansSC-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 配色：与 js/constants.js 保持一致 */
+  --bg: #e7e4dc;
+  --panel: #ffffff;
+  --panel-alt: #efede5;
+  --canvas: #fbfaf5;
+  --header: #eef2f7;
+  --header-border: #c7cfdd;
+  --panel-border: #dbd6c9;
+  --btn-border: #b3ae9e;
+  --btn-hover: #f2f0e6;
+  --btn-pressed: #e0dbc9;
+  --btn-disabled: #ebe9e2;
+  --text: #232b36;
+  --text-dim: #68727e;
+  --force: #e53935;
+  --friction: #1e88e5;
+  --theory: #2e9e44;
+  --highlight: #f57c00;
+
+  --r-card: 12px;
+  --r-btn: 10px;
+  --r-small: 6px;
+  --title-h: 52px;
+  --data-h: 216px;
+  --panel-w: 372px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #d8d5cc;
+  color: var(--text);
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+               'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 舞台：固定 1280×720，由 JS 按视口等比缩放 */
+#stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  flex: 0 0 auto;
+  transform-origin: center center;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+}
+
+.hidden { display: none !important; }
+
+/* ============================ 主菜单 ============================ */
+
+.menu-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 48px 120px 40px;
+}
+
+/* 标题行：主标题居中，右侧放「物理仿真」入口 */
+.menu-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 58px;
+}
+
+.menu-head .btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 132px;
+}
+
+.menu-title {
+  margin: 0;
+  padding: 0 150px;
+  font-size: 34px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.menu-tag {
+  margin: 10px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--highlight);
+}
+
+.menu-cards {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.menu-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
+  background: var(--panel);
+  border: 2px solid var(--force);
+  border-radius: var(--r-card);
+}
+
+.menu-card-text { flex: 1 1 auto; }
+
+.menu-card-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.menu-card-sub {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.menu-card .btn { min-width: 160px; height: 52px; }
+
+.menu-hint {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+/* ============================ 标题栏 ============================ */
+
+.title-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--title-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--header);
+  border: 1px solid var(--header-border);
+  border-radius: var(--r-card);
+}
+
+.title-text {
+  font-size: 20px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.title-tag {
+  font-size: 12px;
+  color: var(--highlight);
+  white-space: nowrap;
+}
+
+.title-spacer { flex: 1 1 auto; }
+
+/* ============================ 按钮 ============================ */
+
+.btn {
+  min-height: 44px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--r-btn);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+
+.btn:hover { background: var(--btn-hover); border-color: var(--highlight); }
+.btn:active { background: var(--btn-pressed); }
+.btn:disabled {
+  background: var(--btn-disabled);
+  border-color: #d4d2ca;
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: #fff;
+  background: var(--highlight);
+  border-color: #d48500;
+}
+
+.btn-primary:hover { background: #ffa82a; border-color: #d48500; }
+.btn-primary:active { background: #ed8f04; }
+.btn-primary:disabled {
+  color: var(--text-dim);
+  background: var(--btn-disabled);
+  border-color: #d4d2ca;
+}
+
+.btn-block { display: block; width: 100%; }
+
+/* ============================ 主体布局 ============================ */
+
+.body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--title-h);
+  bottom: var(--data-h);
+}
+
+.canvas-panel {
+  position: absolute;
+  left: 0;
+  right: var(--panel-w);
+  top: 0;
+  bottom: 0;
+  background: var(--canvas);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+#physics-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 画布顶部状态提示（牛三碰撞数值面板等） */
+.canvas-note {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--force);
+  pointer-events: none;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.control-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--panel-w);
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-card);
+  overflow-y: auto;
+}
+
+.panel-head {
+  margin-bottom: 6px;
+  font-size: 16px;
+  color: var(--friction);
+}
+
+/* ---- 控制面板内部元素 ---- */
+
+.panel-section {
+  margin: 8px 0 2px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.field-label {
+  flex: 0 0 108px;
+  font-size: 14px;
+}
+
+.field-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  text-align: right;
+  background: var(--panel);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--r-small);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--friction);
+  box-shadow: 0 0 0 2px rgba(30, 136, 229, .18);
+}
+
+.field-unit {
+  flex: 0 0 46px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.panel-gap { height: 8px; }
+
+.panel-hint {
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--highlight);
+  white-space: pre-line;
+}
+
+.panel-hint.err { color: var(--force); }
+
+.panel-readout {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--force);
+  white-space: pre-line;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.check-row input { width: 18px; height: 18px; accent-color: var(--highlight); }
+
+/* ============================ 数据区 ============================ */
+
+.data-area {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 4px;
+  height: calc(var(--data-h) - 8px);
+  display: flex;
+  gap: 8px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-card);
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.formula-card { flex: 1 1 0; }
+.chart-card { flex: 1.4 1 0; display: flex; }
+
+.chart-card canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.formula {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formula-title { font-size: 15px; color: var(--force); }
+
+.formula-row {
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.formula-row.dim { color: var(--text-dim); }
+.formula-row.hl { color: var(--highlight); }
+.formula-row.pre { white-space: pre-line; }
+
+/* ============================ 物理仿真弹窗 ============================ */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(35, 43, 54, .42);
+}
+
+.sim-modal {
+  width: 1180px;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 2px solid var(--text);
+  border-radius: var(--r-card);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .3);
+  overflow: hidden;
+}
+
+.sim-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--header);
+  border-bottom: 1px solid var(--header-border);
+}
+
+.sim-head .btn { min-height: 38px; padding: 4px 14px; }
+
+.sim-title { font-size: 20px; color: var(--text); }
+
+.sim-tag { font-size: 12px; color: var(--highlight); }
+
+.sim-main {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 0;
+}
+
+/* 左列：顶部题目类型 + 中部可滚动字段 + 底部固定操作区 */
+.sim-panel {
+  flex: 0 0 auto;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sim-panel .panel-section { margin: 6px 0 0; font-size: 12px; }
+
+.sim-fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.sim-panel .field-row { margin: 3px 0; }
+.sim-panel .field-input { height: 30px; }
+.sim-panel .panel-hint { font-size: 11px; }
+
+.sim-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.sim-actions .btn { min-height: 40px; }
+
+.sim-types { display: flex; gap: 8px; margin: 6px 0 0; }
+
+.sim-type {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--r-btn);
+  cursor: pointer;
+}
+
+.sim-type:hover { background: var(--btn-hover); border-color: var(--highlight); }
+
+.sim-type.active {
+  color: #fff;
+  background: var(--highlight);
+  border-color: #d48500;
+}
+
+.sim-type.soon { color: var(--text-dim); border-style: dashed; }
+
+.sim-right {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sim-derive { flex: 0 0 auto; max-height: 220px; padding: 8px 12px; overflow-y: auto; }
+
+.sim-canvas-card {
+  flex: 1 1 auto;
+  min-height: 170px;
+  background: var(--canvas);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.sim-canvas-card canvas { display: block; width: 100%; height: 100%; }
+
+.sim-canvas-card canvas:focus { outline: none; }
+
+.sim-canvas-card canvas:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(245, 124, 0, .55);
+}
+
+/* 图表坞：默认折叠成一条标题栏，点击展开 V-t / X-t */
+.chart-dock {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.chart-dock.open { height: 176px; }
+
+.dock-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.dock-head:hover { background: var(--btn-hover); }
+
+.dock-title { flex: 1 1 auto; color: var(--text-dim); }
+
+.dock-arrow { font-size: 12px; color: var(--highlight); white-space: nowrap; }
+
+.dock-body { display: none; }
+
+.chart-dock.open .dock-body {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 8px;
+  min-height: 0;
+  padding: 0 8px 8px;
+}
+
+.chart-dock.open .card { padding: 4px 6px; }
+
+.field-input.solved {
+  color: var(--highlight);
+  border-color: var(--highlight);
+  background: #fff8ef;
+}
+
